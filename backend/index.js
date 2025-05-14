@@ -1,31 +1,29 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const fetch = require("node-fetch");
+import express from "express";
+import bodyParser from "body-parser";
+import ollama from "ollama";
+import cors from "cors";
 
 const app = express();
 const PORT = 3000;
+// const router = express.Router();
 
-app.use(bodyParser.json());
+//-----------------------------------------------------------cambiar cors solo para el dominio que sea
 
-app.post("/chat", async (req, res) => {
-  const { prompt } = req.body;
+app.use(cors(), bodyParser.json());
 
+//-----------------------------------------------------------cambiar cors solo para el dominio que sea
+
+app.post("/ask-query", async (req, res) => {
+  const { query, messages } = req.body;
+  console.log("mesajes", messages);
   try {
-    const response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "mistral", // o llama3, etc.
-        prompt,
-        stream: false,
-      }),
+    const response = await ollama.chat({
+      model: "llama3.2",
+      messages: [...messages, { role: "user", content: query }],
     });
-
-    const data = await response.json();
-    res.json({ response: data.response });
+    res.json({ reply: response.message.content });
   } catch (error) {
-    console.error("Error llamando a Ollama:", error);
-    res.status(500).json({ error: "Fallo interno del servidor" });
+    res.status(500).send({ error: "Error interacting with the model" });
   }
 });
 
